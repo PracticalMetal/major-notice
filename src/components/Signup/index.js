@@ -3,8 +3,6 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
-// import FormControlLabel from "@mui/material/FormControlLabel";
-// import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
@@ -32,8 +30,8 @@ function Copyright(props) {
       {...props}
     >
       {"Copyright © "}
-      <Link color="inherit" href="https://mobisec.in/">
-        mobisec
+      <Link color="inherit" href="https://msit.in/">
+        MSIT
       </Link>{" "}
       {new Date().getFullYear()}
       {"."}
@@ -59,7 +57,8 @@ export default function SignUp() {
       !data.get("firstName") ||
       !data.get("lastName") ||
       !data.get("email") ||
-      !data.get("password")
+      !data.get("password") ||
+      !data.get("organization")
     ) {
       alert("Please fill all the fields");
       return;
@@ -82,27 +81,44 @@ export default function SignUp() {
           firstName: data.get("firstName"),
           lastName: data.get("lastName"),
           email: data.get("email"),
+          organization: data.get("organization"),
           uid: user.uid,
-          role: "viewer",
+          role: "admin",
         })
           .then(() => {
-            setSubmitBtn(false);
-            console.log("user added to database");
-
-            updateProfile(auth.currentUser, {
-              displayName: data.get("firstName") + " " + data.get("lastName"),
-            })
-              .then(() => {
-                // Update successful
-              })
-              .catch((error) => {
-                // An error occurred
-              });
           })
           .catch((error) => {
             setSubmitBtn(false);
             console.log(error);
           });
+
+
+          await set(ref(database, "organizations/" + data.get("organization")), {
+            email: data.get("email"),
+            uid: user.uid,
+          })
+            .then(() => {
+  
+              setSubmitBtn(false);
+              console.log("user added to database");
+  
+              updateProfile(auth.currentUser, {
+                displayName: data.get("firstName") + " " + data.get("lastName"),
+              })
+                .then(() => {
+                  // Update successful
+                })
+                .catch((error) => {
+                  // An error occurred
+                });
+            })
+            .catch((error) => {
+              setSubmitBtn(false);
+              console.log(error);
+            });
+
+          
+          
 
         // ...
         navigate("/");
@@ -166,6 +182,16 @@ export default function SignUp() {
                 <TextField
                   required
                   fullWidth
+                  id="organization"
+                  label="Name of Organization"
+                  name="organization"
+                  autoComplete="organization"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
                   id="email"
                   label="Email Address"
                   name="email"
@@ -218,7 +244,7 @@ export default function SignUp() {
             </Grid>
           </Box>
         </Box>
-        <Copyright sx={{ mt: 5, marginTop: 26 }} />
+        <Copyright sx={{ mt: 5, marginTop: 24 }} />
       </Container>
     </ThemeProvider>
   );

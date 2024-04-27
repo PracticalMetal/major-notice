@@ -1,32 +1,17 @@
 import './App.css';
-
 import React, { useEffect, useState } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
-//
-
 import { auth } from "./firebase-config.js";
 import FirebaseData from "./firebaseData";
-
-
-//
 import Signup from "./components/Signup";
 import SignIn from "./components/Signin";
 import ForgotPassword from "./components/ForgotPassword";
-import Dashboard from "./components/Dashboard"
-
-
-//
+import Dashboard from "./components/Dashboard";
 import Stack from '@mui/material/Stack';
 import Skeleton from '@mui/material/Skeleton';
 
-
-
-
-
-
 function App() {
   const firebaseData = FirebaseData();
-
   const [loading, setLoading] = useState(true); // Added loading state
   const [displayName, setDisplayName] = useState("");
   const [organizationName, setOrganizationName] = useState("");
@@ -56,6 +41,15 @@ function App() {
 
       return () => {
         unsubscribe();
+        clearTimeout(timeoutId); // Clear the timeout when component unmounts
+      };
+    } else {
+      // If firebaseData is not available, stop loading after 3 seconds
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 3000); // Adjust timeout duration as needed
+
+      return () => {
         clearTimeout(timeoutId); // Clear the timeout when component unmounts
       };
     }
@@ -102,4 +96,3 @@ function App() {
 }
 
 export default App;
-

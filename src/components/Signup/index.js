@@ -15,7 +15,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
-import { ref, set } from "firebase/database";
+import { ref, set, get } from "firebase/database";
 
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, database } from "../../firebase-config.js";
@@ -52,6 +52,13 @@ export default function SignUp() {
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  
 
     if (
       !data.get("firstName") ||
@@ -76,59 +83,51 @@ export default function SignUp() {
         // Signed in
         const user = userCredential.user;
 
-        //adding user to database
+        // Check if the organization already exists
+        const orgRef = ref(database, "organizations/" + data.get("organization"));
+        const orgSnapshot = await get(orgRef);
+
+        if (!orgSnapshot.exists()) {
+          // If the organization does not exist, create it
+          await set(orgRef, {
+            imageCount: 0,
+          });
+        }
+
+        // Add user to database
         await set(ref(database, "users/" + user.uid), {
           firstName: data.get("firstName"),
           lastName: data.get("lastName"),
           email: data.get("email"),
           organization: data.get("organization"),
           uid: user.uid,
+          joinedOn:formattedDate,
           role: "admin",
-        })
-          .then(() => {
-          })
-          .catch((error) => {
-            setSubmitBtn(false);
-            console.log(error);
-          });
+        });
 
+        // Add user to organization
+        await set(ref(database, "organizations/" + data.get("organization") + "/users/" + user.uid), {
+          email: data.get("email"),
+          uid: user.uid,
+          firstName: data.get("firstName"),
+          lastName: data.get("lastName"),
+          joinedOn: formattedDate,
+          role: "admin",
+        });
 
-          await set(ref(database, "organizations/" + data.get("organization")), {
-            email: data.get("email"),
-            uid: user.uid,
-          })
-            .then(() => {
-  
-              setSubmitBtn(false);
-              console.log("user added to database");
-  
-              updateProfile(auth.currentUser, {
-                displayName: data.get("firstName") + " " + data.get("lastName"),
-              })
-                .then(() => {
-                  // Update successful
-                })
-                .catch((error) => {
-                  // An error occurred
-                });
-            })
-            .catch((error) => {
-              setSubmitBtn(false);
-              console.log(error);
-            });
+        // Update user profile
+        await updateProfile(auth.currentUser, {
+          displayName: data.get("firstName") + " " + data.get("lastName"),
+        });
 
-          
-          
-
-        // ...
+        setSubmitBtn(false);
+        console.log("User added to database");
         navigate("/");
       })
       .catch((error) => {
         setSubmitBtn(false);
-        // const errorCode = error.code;
         const errorMessage = error.message;
         alert(errorMessage);
-        // ..
       });
   };
 

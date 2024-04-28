@@ -5,6 +5,7 @@ import { auth } from "./firebase-config.js";
 import FirebaseData from "./firebaseData";
 import Signup from "./components/Signup";
 import SignIn from "./components/Signin";
+import DocHistory from "./components/DocHistory"
 import ForgotPassword from "./components/ForgotPassword";
 import Dashboard from "./components/Dashboard";
 import Stack from '@mui/material/Stack';
@@ -83,6 +84,16 @@ function App() {
         element={
           isAuthenticated ? (
             <Dashboard name={displayName} role={role} organization={organizationName} />
+          ) : (
+            <Navigate replace to="/signin" />
+          )
+        }
+      />
+      <Route
+        path="/doc-history"
+        element={
+          isAuthenticated ? (
+            <DocHistory name={displayName} role={role} organization={organizationName} />
           ) : (
             <Navigate replace to="/signin" />
           )

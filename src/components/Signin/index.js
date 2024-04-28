@@ -67,22 +67,8 @@ export default function SignIn() {
     // sign in method
     signInWithEmailAndPassword(auth, data.get("email"), data.get("password"))
       .then((userCredential) => {
-        // Signed in
-        const user = userCredential.user;
-
-        // checking if the user is admin or not
-
-        // const role = firebaseData.users?.[user.uid]?.role;
-        // console.log(role);
-
         setBtnDisabled(false);
         navigate("/");
-
-        // if (role === "admin") {
-        //   navigate("/home");
-        // } else {
-        //   navigate("/");
-        // }
       })
       .catch((error) => {
         setBtnDisabled(false);
@@ -151,10 +137,6 @@ export default function SignIn() {
                 ),
               }}
             />
-            {/* <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="Remember me"
-            /> */}
             <Button
               type="submit"
               fullWidth
@@ -172,7 +154,7 @@ export default function SignIn() {
               </Grid>
               <Grid item>
                 <Link href="/signup" variant="body2">
-                  {"Don't have an account? Sign Up"}
+                  {"Register your organization?"}
                 </Link>
               </Grid>
             </Grid>

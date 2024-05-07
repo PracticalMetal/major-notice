@@ -13,12 +13,15 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Title from './Title';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 
 export default function ActiveUsers({ org }) {
   const [images, setImages] = useState([]);
   const [selectedImageId, setSelectedImageId] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [sortOption, setSortOption] = useState('eventDate'); // Default sorting option
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -40,28 +43,20 @@ export default function ActiveUsers({ org }) {
             });
           });
 
-          // Sort images by eventDate in descending order
+          // Sort images based on the selected option
           imgData.sort((a, b) => {
-            const dateA = parseDate(a.eventDate);
-            const dateB = parseDate(b.eventDate);
-            return dateB - dateA;
+            if (sortOption === 'eventDate') {
+              const dateA = parseDate(a.eventDate);
+              const dateB = parseDate(b.eventDate);
+              return dateB - dateA;
+            } else {
+              return new Date(b.date) - new Date(a.date);
+            }
           });
 
           setImages(imgData);
         } else {
           console.log('No users found');
-        }
-
-        // Fetch selected image ID from the database
-        const selectedImgRef = databaseRef(database, `organizations/${org}/images`);
-        const selectedSnapshot = await get(selectedImgRef);
-        if (selectedSnapshot.exists()) {
-          selectedSnapshot.forEach((childSnapshot) => {
-            const imgData = childSnapshot.val();
-            if (imgData.priority === true) {
-              setSelectedImageId(childSnapshot.key);
-            }
-          });
         }
       } catch (error) {
         console.error('Error fetching images:', error);
@@ -69,7 +64,14 @@ export default function ActiveUsers({ org }) {
     };
 
     fetchImages();
-  }, [org]);
+  }, [org, sortOption]);
+
+  useEffect(() => {
+    const selectedImageId = localStorage.getItem('selectedImageId');
+    if (selectedImageId) {
+      setSelectedImageId(selectedImageId);
+    }
+  }, []);
 
   // Function to parse date string in the format DD/MM/YYYY
   const parseDate = (dateString) => {
@@ -113,6 +115,7 @@ export default function ActiveUsers({ org }) {
         });
       }
 
+      localStorage.setItem('selectedImageId', id); // Store selected image ID
       setSnackbarMessage('Selection successful');
       setSelectedImageId(id);
       setSnackbarOpen(true);
@@ -128,10 +131,22 @@ export default function ActiveUsers({ org }) {
     setSnackbarOpen(false);
   };
 
+  const handleChangeSortOption = (event) => {
+    setSortOption(event.target.value);
+  };
+
   return (
     <React.Fragment>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
         <Title style={{ marginRight: '8px' }}>Document History</Title>
+        <Select
+          value={sortOption}
+          onChange={handleChangeSortOption}
+          style={{ marginLeft: 'auto' }}
+        >
+          <MenuItem value="eventDate">Sort by Event Date</MenuItem>
+          <MenuItem value="uploadDate">Sort by Upload Date</MenuItem>
+        </Select>
       </div>
 
       <Table size="small">

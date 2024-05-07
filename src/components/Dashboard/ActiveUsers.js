@@ -74,7 +74,7 @@ export default function ActiveUsers({ org }) {
             <TableCell>Email</TableCell>
             <TableCell>Joined On</TableCell>
             <TableCell>Role</TableCell>
-            <TableCell>Delete</TableCell>
+            {/* <TableCell>Delete</TableCell> */}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -91,11 +91,11 @@ export default function ActiveUsers({ org }) {
                   color={row.role === 'admin' ? 'error' : 'success'}
                 />
               </TableCell>
-              <TableCell>
+              {/* <TableCell>
                 <Link color="inherit" href="#" onClick={preventDefault}>
                   <DeleteSharpIcon />
                 </Link>
-              </TableCell>
+              </TableCell> */}
             </TableRow>
           ))}
         </TableBody>

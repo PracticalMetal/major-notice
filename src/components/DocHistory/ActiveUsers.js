@@ -16,6 +16,12 @@ import MuiAlert from '@mui/material/Alert';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Pagination from '@mui/material/Pagination';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 
 export default function ActiveUsers({ org }) {
   const [images, setImages] = useState([]);
@@ -25,6 +31,8 @@ export default function ActiveUsers({ org }) {
   const [sortOption, setSortOption] = useState('upcomingDates'); // Default sorting option
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [openMonthDialog, setOpenMonthDialog] = useState(false);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -49,29 +57,13 @@ export default function ActiveUsers({ org }) {
           // Sort images based on the selected option
           imgData.sort((a, b) => {
             if (sortOption === 'eventDate') {
-              const dateA = parseDate(a.eventDate);
-              const dateB = parseDate(b.eventDate);
-              return dateB - dateA;
-            } else if(sortOption==='uploadDate') {
-              const dateA = parseDate2(a.date);
-              const dateB = parseDate2(b.date);
-              return dateB - dateA;
+              return compareDates(a.eventDate, b.eventDate);
+            } else if (sortOption === 'uploadDate') {
+              return compareDates(a.date, b.date);
+            } else if (sortOption === 'month') {
+              return compareMonths(a.date, b.date);
             } else {
-              const today = new Date();
-              const dateA = parseDate(a.eventDate);
-              const dateB = parseDate(b.eventDate);
-  
-              if (dateA < today) {
-                return 1;
-              }
-  
-              if (dateB < today) {
-                return -1;
-              }
-  
-              const differenceA = Math.abs(dateA - today);
-              const differenceB = Math.abs(dateB - today);
-              return differenceA - differenceB;
+              return compareUpcomingDates(a.eventDate, b.eventDate);
             }
           });
 
@@ -85,7 +77,7 @@ export default function ActiveUsers({ org }) {
     };
 
     fetchImages();
-  }, [org, sortOption]);
+  }, [org, sortOption, selectedMonth]);
 
   useEffect(() => {
     const selectedImageId = localStorage.getItem('selectedImageId');
@@ -103,12 +95,28 @@ export default function ActiveUsers({ org }) {
     return new Date(year, month, day);
   };
 
-  const parseDate2 = (dateString) => {
-    const parts = dateString.split('-');
-    const day = parseInt(parts[0]);
-    const month = parseInt(parts[1]) - 1; // Months are zero-based
-    const year = parseInt(parts[2]);
-    return new Date(year, month, day);
+  const compareDates = (dateStringA, dateStringB) => {
+    const dateA = parseDate(dateStringA);
+    const dateB = parseDate(dateStringB);
+    return dateB - dateA;
+  };
+
+  const compareUpcomingDates = (dateStringA, dateStringB) => {
+    const today = new Date();
+    const dateA = parseDate(dateStringA);
+    const dateB = parseDate(dateStringB);
+
+    if (dateA < today) {
+      return 1;
+    }
+
+    if (dateB < today) {
+      return -1;
+    }
+
+    const differenceA = Math.abs(dateA - today);
+    const differenceB = Math.abs(dateB - today);
+    return differenceA - differenceB;
   };
 
   // Function to open imageURL in a new tab
@@ -161,7 +169,30 @@ export default function ActiveUsers({ org }) {
   };
 
   const handleChangeSortOption = (event) => {
-    setSortOption(event.target.value);
+    if (event.target.value === 'month') {
+      setOpenMonthDialog(true);
+    } else {
+      setSortOption(event.target.value);
+    }
+  };
+
+  const handleCloseMonthDialog = () => {
+    setOpenMonthDialog(false);
+  };
+
+  const handleMonthSelect = () => {
+    setSortOption('month');
+    setOpenMonthDialog(false);
+  };
+
+  const handleChangeMonth = (event) => {
+    setSelectedMonth(event.target.value);
+  };
+
+  const compareMonths = (dateStringA, dateStringB) => {
+    const monthA = parseInt(dateStringA.split('-')[1]);
+    const monthB = parseInt(dateStringB.split('-')[1]);
+    return monthB - monthA;
   };
 
   // Logic for pagination
@@ -183,6 +214,7 @@ export default function ActiveUsers({ org }) {
           <MenuItem value="eventDate">Sort by Event Date</MenuItem>
           <MenuItem value="uploadDate">Sort by Upload Date</MenuItem>
           <MenuItem value="upcomingDates">Sort by Upcoming Dates</MenuItem>
+          <MenuItem value="month">Sort by Month</MenuItem>
         </Select>
       </div>
 
@@ -237,6 +269,29 @@ export default function ActiveUsers({ org }) {
           color="primary"
         />
       </div>
+
+      <Dialog open={openMonthDialog} onClose={handleCloseMonthDialog}>
+        <DialogTitle>Select Month</DialogTitle>
+        <DialogContent>
+          <TextField
+            select
+            label="Month"
+            value={selectedMonth}
+            onChange={handleChangeMonth}
+            fullWidth
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+              <MenuItem key={month} value={month}>
+                {new Date(2022, month - 1).toLocaleString('default', { month: 'long' })}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseMonthDialog}>Cancel</Button>
+          <Button onClick={handleMonthSelect}>Select</Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
         <MuiAlert elevation={6} variant="filled" onClose={handleSnackbarClose} severity="success">

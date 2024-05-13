@@ -182,8 +182,8 @@ export default function Dashboard({ name, role, organization }) {
           foundNoticeDate = true;
         } else if (foundNoticeDate) {
           const nextLine = lines[i + 1]?.trim();
-    const concatenatedLine = line + (nextLine ? " " + nextLine : "");
-    setInfo(concatenatedLine);
+          const concatenatedLine = line + (nextLine ? " " + nextLine : "");
+          setInfo(concatenatedLine.slice(0,125));
           break;
         }
       }
@@ -244,18 +244,24 @@ export default function Dashboard({ name, role, organization }) {
 
                   if (curCountSnapshot.exists()) {
                     const curImgCount = curCountSnapshot.val();
-                    const currentDate = new Date();
-                    const formattedDate = currentDate.toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    );
+                    function formatDateToISO(date) {
+                      const day = String(date.getDate()).padStart(2, '0');
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const year = date.getFullYear();
+                    
+                      return `${day}-${month}-${year}`;
+                    }
+                    
+                    const date = new Date();
+                    const formattedDate = formatDateToISO(date);
+                    
+
+                    
 
                     // Generate a unique identifier for the image
                     const uniqueID = Date.now(); // You can use any other unique identifier generation method
+                    const dateNew=new Date();
+                    const currentMonth=dateNew.getMonth();
 
                     await set(
                       databaseRef(
@@ -277,10 +283,19 @@ export default function Dashboard({ name, role, organization }) {
                     ).then(async () => {
                       const orgRef = databaseRef(
                         database,
-                        `organizations/${org}`
+                        `organizations/${org}/${currentMonth}/${uniqueID}`
                       );
-                      await update(orgRef, {
-                        imageCount: curImgCount + 1,
+                      await set(orgRef, {
+                        id: uniqueID,
+                        priority: false,
+                        imageURL: downloadURL,
+                        firstName: firstName,
+                        email: email,
+                        uid: user.uid,
+                        dateOfUpload: formattedDate,
+                        title: title,
+                        info: info,
+                        eventDate: eventDate,
                       });
                     });
                   }
@@ -288,6 +303,7 @@ export default function Dashboard({ name, role, organization }) {
                   console.log("Organization not found for user:", user.uid);
                 }
 
+                
                 console.log("Upload success");
                 // Set upload success state to true
                 setUploadSuccess(true);

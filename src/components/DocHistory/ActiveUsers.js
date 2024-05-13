@@ -15,13 +15,16 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import Pagination from '@mui/material/Pagination';
 
 export default function ActiveUsers({ org }) {
   const [images, setImages] = useState([]);
   const [selectedImageId, setSelectedImageId] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [sortOption, setSortOption] = useState('eventDate'); // Default sorting option
+  const [sortOption, setSortOption] = useState('upcomingDates'); // Default sorting option
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -49,8 +52,26 @@ export default function ActiveUsers({ org }) {
               const dateA = parseDate(a.eventDate);
               const dateB = parseDate(b.eventDate);
               return dateB - dateA;
+            } else if(sortOption==='uploadDate') {
+              const dateA = parseDate2(a.date);
+              const dateB = parseDate2(b.date);
+              return dateB - dateA;
             } else {
-              return new Date(b.date) - new Date(a.date);
+              const today = new Date();
+              const dateA = parseDate(a.eventDate);
+              const dateB = parseDate(b.eventDate);
+  
+              if (dateA < today) {
+                return 1;
+              }
+  
+              if (dateB < today) {
+                return -1;
+              }
+  
+              const differenceA = Math.abs(dateA - today);
+              const differenceB = Math.abs(dateB - today);
+              return differenceA - differenceB;
             }
           });
 
@@ -76,6 +97,14 @@ export default function ActiveUsers({ org }) {
   // Function to parse date string in the format DD/MM/YYYY
   const parseDate = (dateString) => {
     const parts = dateString.split('/');
+    const day = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1; // Months are zero-based
+    const year = parseInt(parts[2]);
+    return new Date(year, month, day);
+  };
+
+  const parseDate2 = (dateString) => {
+    const parts = dateString.split('-');
     const day = parseInt(parts[0]);
     const month = parseInt(parts[1]) - 1; // Months are zero-based
     const year = parseInt(parts[2]);
@@ -135,6 +164,13 @@ export default function ActiveUsers({ org }) {
     setSortOption(event.target.value);
   };
 
+  // Logic for pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = images.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <React.Fragment>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
@@ -146,6 +182,7 @@ export default function ActiveUsers({ org }) {
         >
           <MenuItem value="eventDate">Sort by Event Date</MenuItem>
           <MenuItem value="uploadDate">Sort by Upload Date</MenuItem>
+          <MenuItem value="upcomingDates">Sort by Upcoming Dates</MenuItem>
         </Select>
       </div>
 
@@ -163,7 +200,7 @@ export default function ActiveUsers({ org }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {images.map((row) => (
+          {currentItems.map((row) => (
             <TableRow key={row.id} style={selectedImageId === row.id ? { backgroundColor: '#90EE90' } : null}>
               <TableCell>{row.title}</TableCell>
               <TableCell>{row.eventDate}</TableCell>
@@ -191,6 +228,15 @@ export default function ActiveUsers({ org }) {
           ))}
         </TableBody>
       </Table>
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+        <Pagination
+          count={Math.ceil(images.length / itemsPerPage)}
+          page={currentPage}
+          onChange={(event, page) => paginate(page)}
+          color="primary"
+        />
+      </div>
 
       <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
         <MuiAlert elevation={6} variant="filled" onClose={handleSnackbarClose} severity="success">
